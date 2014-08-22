@@ -54,16 +54,28 @@ trainTarget = trainRaw$target
 trainFeatures = trainRaw[,-nearZeroVarFeaturesTrainIdx]
 trainFeatures = trainFeatures[,-18]  # remove 'dummy'
 trainFeatures = convertToFactors(trainFeatures)
+trainFeaturesWithoutTarget = trainFeatures[,-2]
 testFeatures = testRaw[,-nearZeroVarFeaturesTestIdx]
 testFeatures = testFeatures[,-17] # remove dummy
 testFeatures = convertToFactors(testFeatures)
 
+# playing with a single tree
+# library(rpart)
+# treeModel = rpart(trainTarget ~ ., data=trainFeaturesWithoutTarget) # this generated a tree with a single node
+library(party)
+treeModel = ctree(trainTarget ~ ., data=trainFeaturesWithoutTarget)
+trainTreePreds = predict(treeModel, newdata=trainFeaturesWithoutTarget) # scores .2667
+testTreePreds = predict(treeModel, newdata=testFeatures) # LB score of .26265
+preds = as.vector(testTreePreds)
 
-library(Cubist)
-cubistModel = cubist(trainFeatures[,-2], trainTarget)
-trainPredsCubist = predict(cubistModel, newdata=trainFeatures)
-testPredsCubist = predict(cubistModel, newdata=testFeatures)
-preds = testPredsCubist
+# playing with a Cubist model
+# library(Cubist)
+# this worked, but took 30+ m #cubistModel = cubist(trainFeaturesWithoutTarget, trainTarget)
+# this never returned, even after running overnight system.time(cubistTuned <- train(trainFeaturesWithoutTarget, trainTarget, method="cubist"))
+# 
+# trainPredsCubist = predict(cubistModel, newdata=trainFeaturesWithoutTarget)
+# testPredsCubist = predict(cubistModel, newdata=testFeatures)
+# preds = testPredsCubist
 
 # playing with pre processing, including creating dummy vars from factors
 # dummyVarInfo <- dummyVars(target ~ .-id, data = trainFeatures)
